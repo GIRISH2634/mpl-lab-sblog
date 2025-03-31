@@ -1,3 +1,4 @@
+import 'package:blog_app/models/blog_model.dart';
 import 'package:flutter/material.dart';
 import 'package:blog_app/utils/shared_prefs.dart';
 import 'package:blog_app/utils/dummy_data.dart'; // Import dummy data
@@ -22,7 +23,7 @@ class HomeScreen extends StatelessWidget {
   ];
 
   // Use blogs from dummy_data.dart
-  final List<Map<String, String>> blogs = dummyBlogs;
+  final List<Blog> blogs = dummyBlogs;
 
   Future<bool> _checkLoginStatus() async {
     return await SharedPrefs.getLoginState();
@@ -44,7 +45,9 @@ class HomeScreen extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()), // Show loading indicator while checking login
+            body: Center(
+                child:
+                    CircularProgressIndicator()), // Show loading indicator while checking login
           );
         }
 
@@ -57,7 +60,8 @@ class HomeScreen extends StatelessWidget {
                   icon: const Icon(Icons.book),
                   tooltip: 'My Blogs',
                   onPressed: () {
-                    Navigator.pushNamed(context, '/myBlogs'); // Navigate to MyBlogsScreen
+                    Navigator.pushNamed(
+                        context, '/myBlogs'); // Navigate to MyBlogsScreen
                   },
                 ),
                 IconButton(
@@ -83,7 +87,8 @@ class HomeScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => BlogDetailScreen(blog: blogs[index]),
+                          builder: (context) =>
+                              BlogDetailScreen(blog: blogs[index]),
                         ),
                       );
                     },
@@ -107,7 +112,9 @@ class HomeScreen extends StatelessWidget {
                             ),
                             child: Center(
                               child: Image.asset(
-                                imagePaths[index % imagePaths.length], // Pick image dynamically
+                                imagePaths[index %
+                                    imagePaths
+                                        .length], // Pick image dynamically
                                 width: 100,
                                 height: 100,
                                 fit: BoxFit.cover,
@@ -120,7 +127,7 @@ class HomeScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  blogs[index]['title']!,
+                                  blogs[index].title,
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -130,7 +137,7 @@ class HomeScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'By ${blogs[index]['author']!}',
+                                  'By ${blogs[index].author}',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.grey[600],

@@ -16,7 +16,7 @@ class _CreateBlogScreenState extends State<CreateBlogScreen> {
   final _authorController = TextEditingController();
 
   String? selectedCategory;
-  File? _selectedImage;
+  final String _selectedImage = 'assets/image1.png';
   DateTime? _publishDate;
 
   final List<String> categories = [
@@ -26,15 +26,6 @@ class _CreateBlogScreenState extends State<CreateBlogScreen> {
     'Health',
     'Business'
   ];
-
-  Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _selectedImage = File(pickedFile.path);
-      });
-    }
-  }
 
   Future<void> _pickDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
@@ -62,7 +53,7 @@ class _CreateBlogScreenState extends State<CreateBlogScreen> {
         'description': _descriptionController.text,
         'author': _authorController.text,
         'category': selectedCategory!,
-        'image': _selectedImage?.path, // Store image path if selected
+        'image': _selectedImage, // Use the image path directly
         'publishDate': DateFormat('yyyy-MM-dd').format(_publishDate!),
       });
     }
@@ -103,7 +94,8 @@ class _CreateBlogScreenState extends State<CreateBlogScreen> {
               ),
               TextField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(labelText: 'Blog Description'),
+                decoration:
+                    const InputDecoration(labelText: 'Blog Description'),
                 maxLines: 3,
               ),
               const SizedBox(height: 10),
@@ -117,16 +109,10 @@ class _CreateBlogScreenState extends State<CreateBlogScreen> {
                 onTap: () => _pickDate(context),
               ),
               const SizedBox(height: 10),
-              ElevatedButton.icon(
-                onPressed: _pickImage,
-                icon: const Icon(Icons.image),
-                label: const Text('Upload Image'),
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Image.asset(_selectedImage, height: 100),
               ),
-              if (_selectedImage != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Image.file(_selectedImage!, height: 100),
-                ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: submitBlog,
