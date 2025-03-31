@@ -1,25 +1,27 @@
 name: blog_app
 description: "A new Flutter project."
 
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.6.2 <4.0.0' # Ensure the correct SDK range
+  sdk: ">=3.6.2 <4.0.0" # Ensure the correct SDK range
 
 dependencies:
-  cupertino_icons: ^1.0.8
-  firebase_core: ^3.12.1
-  firebase_database: ^11.3.4
-  firebase_auth: ^5.5.1
-  cloud_firestore: ^5.6.5
-  firebase_storage: ^12.4.4
   flutter:
     sdk: flutter
-  image_picker: ^1.1.2
-  intl: ^0.20.2
+  cupertino_icons: ^1.0.6
+  firebase_core: ^2.27.1
+  firebase_auth: ^4.17.9
+  cloud_firestore: ^4.15.9
+  firebase_storage: ^11.6.10
+  image_picker: ^1.0.7
   shared_preferences: ^2.2.2
+  intl: ^0.19.0
+  provider: ^6.1.2
+  cached_network_image: ^3.3.1
+  uuid: ^4.3.3
 
 dev_dependencies:
   flutter_lints: ^5.0.0
