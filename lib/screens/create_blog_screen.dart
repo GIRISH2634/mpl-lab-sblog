@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // For formatting the selected date
-import 'package:image_picker/image_picker.dart'; // For image selection
+import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 class CreateBlogScreen extends StatefulWidget {
@@ -13,10 +13,11 @@ class CreateBlogScreen extends StatefulWidget {
 class _CreateBlogScreenState extends State<CreateBlogScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _contentController = TextEditingController(); // ✨ NEW
   final _authorController = TextEditingController();
 
   String? selectedCategory;
-  final String _selectedImage = 'assets/image1.png';
+  File? _selectedImage;
   DateTime? _publishDate;
 
   final List<String> categories = [
@@ -24,7 +25,7 @@ class _CreateBlogScreenState extends State<CreateBlogScreen> {
     'Lifestyle',
     'Education',
     'Health',
-    'Business'
+    'Business',
   ];
 
   Future<void> _pickDate(BuildContext context) async {
@@ -35,9 +36,21 @@ class _CreateBlogScreenState extends State<CreateBlogScreen> {
       lastDate: DateTime(2100),
     );
 
-    if (pickedDate != null && pickedDate != _publishDate) {
+    if (pickedDate != null) {
       setState(() {
         _publishDate = pickedDate;
+      });
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedFile =
+        await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
       });
     }
   }
@@ -45,17 +58,25 @@ class _CreateBlogScreenState extends State<CreateBlogScreen> {
   void submitBlog() {
     if (_titleController.text.isNotEmpty &&
         _descriptionController.text.isNotEmpty &&
+        _contentController.text.isNotEmpty &&
         _authorController.text.isNotEmpty &&
         selectedCategory != null &&
         _publishDate != null) {
       Navigator.pop(context, {
         'title': _titleController.text,
         'description': _descriptionController.text,
+        'content': _contentController.text, // ✨ NEW
         'author': _authorController.text,
         'category': selectedCategory!,
-        'image': _selectedImage, // Use the image path directly
-        'publishDate': DateFormat('yyyy-MM-dd').format(_publishDate!),
+        'image': _selectedImage?.path,
+        'publishDate': _publishDate!.toIso8601String(),
+        'likes': 0,
+        'comments': [],
       });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill all fields")),
+      );
     }
   }
 
@@ -95,8 +116,15 @@ class _CreateBlogScreenState extends State<CreateBlogScreen> {
               TextField(
                 controller: _descriptionController,
                 decoration:
-                    const InputDecoration(labelText: 'Blog Description'),
+                    const InputDecoration(labelText: 'Short Description'),
                 maxLines: 3,
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _contentController,
+                decoration:
+                    const InputDecoration(labelText: 'Full Blog Content ✍️'),
+                maxLines: 10,
               ),
               const SizedBox(height: 10),
               ListTile(
@@ -109,9 +137,19 @@ class _CreateBlogScreenState extends State<CreateBlogScreen> {
                 onTap: () => _pickDate(context),
               ),
               const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Image.asset(_selectedImage, height: 100),
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  height: 150,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: _selectedImage != null
+                      ? Image.file(_selectedImage!, fit: BoxFit.cover)
+                      : const Center(child: Text("Tap to select image")),
+                ),
               ),
               const SizedBox(height: 20),
               ElevatedButton(

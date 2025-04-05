@@ -4,6 +4,7 @@ class Blog {
   final String id;
   final String title;
   final String description;
+  final String content; // ✅ NEW FIELD for full blog text
   final String author;
   final String category;
   final DateTime publishDate;
@@ -15,6 +16,7 @@ class Blog {
     required this.id,
     required this.title,
     required this.description,
+    required this.content, // ✅ NEW
     required this.author,
     required this.category,
     required this.publishDate,
@@ -29,6 +31,7 @@ class Blog {
       'id': id,
       'title': title,
       'description': description,
+      'content': content, // ✅ Include in Firestore
       'author': author,
       'category': category,
       'publishDate': Timestamp.fromDate(publishDate),
@@ -43,14 +46,15 @@ class Blog {
       id: map['id'] as String,
       title: map['title'] as String,
       description: map['description'] as String,
+      content: map['content'] as String, // ✅ Retrieve from Firestore
       author: map['author'] as String,
       category: map['category'] as String,
       publishDate: (map['publishDate'] as Timestamp).toDate(),
       imageUrl: map['imageUrl'] as String?,
       likes: List<String>.from(map['likes'] ?? []),
       comments: (map['comments'] as List<dynamic>?)
-              ?.map(
-                  (comment) => Comment.fromMap(comment as Map<String, dynamic>))
+              ?.map((comment) =>
+                  Comment.fromMap(comment as Map<String, dynamic>))
               .toList() ??
           [],
     );
