@@ -16,98 +16,72 @@ class BlogDetailScreen extends StatefulWidget {
 class _BlogDetailScreenState extends State<BlogDetailScreen> {
   final TextEditingController _commentController = TextEditingController();
   final String currentUserId = 'currentUser'; // Replace with actual user ID
-
-  bool isLiked = false;
+  late Blog _currentBlog;
 
   @override
   void initState() {
     super.initState();
-    isLiked = widget.blog.likes.contains(currentUserId);
+    _currentBlog = widget.blog;
   }
 
   Future<void> _toggleLike() async {
-    final prefs = await SharedPreferences.getInstance();
-    final storedBlogs = prefs.getString('myBlogs');
-
-    if (storedBlogs != null) {
-      List<Map<String, dynamic>> blogs =
-          List<Map<String, dynamic>>.from(jsonDecode(storedBlogs));
-
-      final index = blogs.indexWhere((blog) => blog['id'] == widget.blog.id);
-
-      if (index != -1) {
-        List<String> likes =
-            List<String>.from(blogs[index]['likes'] ?? <String>[]);
-
-        setState(() {
-          if (likes.contains(currentUserId)) {
-            likes.remove(currentUserId);
-            widget.blog.likes.remove(currentUserId); // ✅ Update UI state
-            isLiked = false;
-          } else {
-            likes.add(currentUserId);
-            widget.blog.likes.add(currentUserId); // ✅ Update UI state
-            isLiked = true;
-          }
-
-          blogs[index]['likes'] = likes; // ✅ Save to local storage
-        });
-
-        await prefs.setString('myBlogs', jsonEncode(blogs));
+    setState(() {
+      if (_currentBlog.likes.contains(currentUserId)) {
+        _currentBlog.likes.remove(currentUserId);
       } else {
-        _showSnackBar("Blog not found");
+        _currentBlog.likes.add(currentUserId);
       }
-    } else {
-      _showSnackBar("No blogs found in storage");
-    }
+    });
+
+    await _updateLocalStorage();
   }
 
-  void _addComment() async {
+  Future<void> _addComment() async {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
 
     final newComment = Comment(
       userId: currentUserId,
       text: text,
+      timestamp: DateTime.now(),
     );
 
+    setState(() {
+      _currentBlog.comments.insert(0, newComment);
+    });
+
+    _commentController.clear();
+    await _updateLocalStorage();
+  }
+
+  Future<void> _updateLocalStorage() async {
     final prefs = await SharedPreferences.getInstance();
     final storedBlogs = prefs.getString('myBlogs');
 
     if (storedBlogs != null) {
-      List<Map<String, dynamic>> blogs =
-          List<Map<String, dynamic>>.from(jsonDecode(storedBlogs));
-      final index = blogs.indexWhere((blog) => blog['id'] == widget.blog.id);
+      List<dynamic> blogs = jsonDecode(storedBlogs);
+
+      final index = blogs.indexWhere((blog) => blog['id'] == _currentBlog.id);
 
       if (index != -1) {
-        List<Map<String, dynamic>> comments =
-            List<Map<String, dynamic>>.from(blogs[index]['comments'] ?? []);
-        comments.insert(0, newComment.toMap());
+        // Update the blog data in the list
+        blogs[index] = _currentBlog.toMap();
 
-        blogs[index]['comments'] = comments;
-        widget.blog.comments.insert(0, newComment); // ✅ Update UI state
-
+        // Save back to SharedPreferences
         await prefs.setString('myBlogs', jsonEncode(blogs));
-        _commentController.clear();
-        setState(() {});
-      } else {
-        _showSnackBar("Blog not found");
       }
-    } else {
-      _showSnackBar("No blogs found in storage");
     }
   }
 
   void _showSnackBar(String message) {
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
   Widget _buildBlogImage() {
-    if (widget.blog.imageUrl == null || widget.blog.imageUrl!.isEmpty) {
+    if (_currentBlog.imageUrl == null || _currentBlog.imageUrl!.isEmpty) {
       return Container(
         height: 200,
         color: Colors.grey[300],
@@ -116,7 +90,7 @@ class _BlogDetailScreenState extends State<BlogDetailScreen> {
     }
 
     return Image.network(
-      widget.blog.imageUrl!,
+      _currentBlog.imageUrl!,
       height: 200,
       width: double.infinity,
       fit: BoxFit.cover,
@@ -131,7 +105,7 @@ class _BlogDetailScreenState extends State<BlogDetailScreen> {
   }
 
   Widget _buildCommentSection() {
-    if (widget.blog.comments.isEmpty) {
+    if (_currentBlog.comments.isEmpty) {
       return const Padding(
         padding: EdgeInsets.only(top: 8.0),
         child: Text('No comments yet. Be the first!'),
@@ -141,9 +115,9 @@ class _BlogDetailScreenState extends State<BlogDetailScreen> {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: widget.blog.comments.length,
+      itemCount: _currentBlog.comments.length,
       itemBuilder: (context, index) {
-        final comment = widget.blog.comments[index];
+        final comment = _currentBlog.comments[index];
         return ListTile(
           leading: const CircleAvatar(child: Icon(Icons.person)),
           title: Text(comment.userId),
@@ -164,14 +138,11 @@ class _BlogDetailScreenState extends State<BlogDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final likesCount = widget.blog.likes.length;
-    final commentsCount = widget.blog.comments.length;
+    final likesCount = _currentBlog.likes.length;
+    final commentsCount = _currentBlog.comments.length;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.blog.title),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: Text(_currentBlog.title), elevation: 0),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,31 +153,41 @@ class _BlogDetailScreenState extends State<BlogDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(widget.blog.title,
-                      style: Theme.of(context).textTheme.headlineMedium),
+                  Text(
+                    _currentBlog.title,
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
                       const Icon(Icons.person, size: 16),
                       const SizedBox(width: 4),
-                      Text(widget.blog.author),
+                      Text(_currentBlog.author),
                       const SizedBox(width: 16),
                       const Icon(Icons.calendar_today, size: 16),
                       const SizedBox(width: 4),
-                      Text(DateFormat('MMM dd, yyyy')
-                          .format(widget.blog.publishDate)),
+                      Text(
+                        DateFormat('MMM dd, yyyy')
+                            .format(_currentBlog.publishDate),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Text(widget.blog.description,
-                      style: Theme.of(context).textTheme.bodyLarge),
+                  Text(
+                    _currentBlog.description,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
                       IconButton(
                         icon: Icon(
-                          isLiked ? Icons.favorite : Icons.favorite_border,
-                          color: isLiked ? Colors.red : null,
+                          _currentBlog.likes.contains(currentUserId)
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: _currentBlog.likes.contains(currentUserId)
+                              ? Colors.red
+                              : null,
                         ),
                         onPressed: _toggleLike,
                       ),
@@ -220,8 +201,7 @@ class _BlogDetailScreenState extends State<BlogDetailScreen> {
                   const Divider(),
                   const Text(
                     'Comments',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   _buildCommentSection(),
                   const SizedBox(height: 80),
